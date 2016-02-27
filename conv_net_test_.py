@@ -1,6 +1,9 @@
 import tensorflow as tf
 import numpy as np
-import ImageProcessingFunctions as IPF
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+
+import image_processing_functions as IPF
 
 #number of color channels
 CH = 3
@@ -9,7 +12,7 @@ UNIT_STRIDE = [1,1,1,1]
 MAX_STEPS = 100
 KERNEL_SHAPES = [(5,5,CH,3),(5,5,3,3),(5,5,3,1)]
 LR_KEY = 'learning_rate'
-LR_VALUE = 0.00001
+LR_VALUE = 0.001
 
 def placeholder_inputs(imageX,imageY):
     image_placeholder = tf.placeholder(tf.float32,(BS,imageX,imageY,CH))
@@ -43,8 +46,8 @@ def inference(image,model_parameters):
         return output
     
     hidden_0 = transform(image,kernel_0)
-    hidden_1 = transform(image,kernel_1)
-    hidden_2 = transform(image,kernel_2)
+    hidden_1 = transform(hidden_0,kernel_1)
+    hidden_2 = transform(hidden_1,kernel_2)
     output = tf.sigmoid(hidden_2)
     return output
 
@@ -125,6 +128,8 @@ def run_inference(data):
         print(type(pd))
         print(sess.run(log_loss,feed_dict=feed_dict))
 
+        return pd
+
 
         
         
@@ -140,11 +145,14 @@ def prep_data(data_address,target_address):
 ######################################################################
 ######################################################################
 ######################################################################
-a = 'MODISfires/data/1.jpg'
-b = 'MODISfires/targets/1.png'
+a = '../MODISfires/data/1.jpg'
+b = '../MODISfires/targets/1.png'
 data = prep_data(a,b)
 run_training(data)
-run_inference(data)
+pd = run_inference(data)
+img = np.squeeze(pd)
+print(pd)
+print(img.shape)
 
-
-
+imgplot = plt.imshow(img)
+plt.show()
