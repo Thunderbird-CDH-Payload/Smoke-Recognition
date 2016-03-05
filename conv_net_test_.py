@@ -12,7 +12,7 @@ UNIT_STRIDE = [1,1,1,1]
 MAX_STEPS = 100
 KERNEL_SHAPES = [(5,5,CH,3),(5,5,3,3),(5,5,3,1)]
 LR_KEY = 'learning_rate'
-LR_VALUE = 0.001
+LR_VALUE = 0.000001
 
 def placeholder_inputs(imageX,imageY):
     image_placeholder = tf.placeholder(tf.float32,(BS,imageX,imageY,CH))
@@ -29,26 +29,27 @@ def fill_feed_dict(image,target,image_pl,target_pl):
     
     return feed_dict
 
-def init_vars():
-    kernel_0 = tf.Variable(tf.zeros(KERNEL_SHAPES[0],dtype=tf.float32),name='k1')
-    kernel_1 = tf.Variable(tf.zeros(KERNEL_SHAPES[1],dtype=tf.float32),name='k2')
-    kernel_2 = tf.Variable(tf.zeros(KERNEL_SHAPES[2],dtype=tf.float32),name='k3')
+def init_vars(imageX,imageY):
+    kernel_0 = tf.Variable(tf.random_normal(KERNEL_SHAPES[0],stddev=0.001,dtype=tf.float32),name='k1')
+    kernel_1 = tf.Variable(tf.random_normal(KERNEL_SHAPES[1],stddev=0.001,dtype=tf.float32),name='k2')
+    kernel_2 = tf.Variable(tf.random_normal(KERNEL_SHAPES[2],stddev=0.001,dtype=tf.float32),name='k3')
+    bias = tf.Variable(tf.random_normal((1,1,1,1),stddev=0.001,dtype=tf.float32,name='bias'))
     
-    model_parameters = kernel_0,kernel_1,kernel_2
+    model_parameters = kernel_0,kernel_1,kernel_2,bias
     return model_parameters
 
 def inference(image,model_parameters):
-    kernel_0,kernel_1,kernel_2 = model_parameters
+    kernel_0,kernel_1,kernel_2,bias = model_parameters
     
     def transform(state , kernel):
         conv_out = tf.nn.conv2d(state,kernel,UNIT_STRIDE,'SAME')
         output = tf.nn.elu(conv_out)
-        return output
+        return conv_out 
     
     hidden_0 = transform(image,kernel_0)
     hidden_1 = transform(hidden_0,kernel_1)
-    hidden_2 = transform(hidden_1,kernel_2)
-    output = tf.sigmoid(hidden_2)
+    hidden_2 = transform(image,kernel_2)
+    output = tf.sigmoid(hidden_2+bias)
     return output
 
 def loss(output,target):
@@ -80,15 +81,18 @@ def learning_params():
 
 def run_training(data):
     image,target = data
+    imageX = image.shape[1]
+    imageY = image.shape[2]
+
 
     with tf.Graph().as_default():
-        images_placeholder, target_placeholder = placeholder_inputs(image.shape[1],image.shape[2])
+        images_placeholder, target_placeholder = placeholder_inputs(imageX,imageY)
 
         feed_dict = fill_feed_dict(image,target,images_placeholder,target_placeholder)
 
         sess = tf.Session()
 
-        model_parameters = init_vars()
+        model_parameters = init_vars(imageX,imageY)
         
         probability_distribution = inference(images_placeholder,model_parameters)
         log_loss = loss(probability_distribution,target_placeholder)
@@ -108,6 +112,8 @@ def run_training(data):
 
 def run_inference(data):
     image,target = data
+    imageX = image.shape[1]
+    imageY = image.shape[2]
 
     with tf.Graph().as_default():
         images_placeholder, target_placeholder = placeholder_inputs(image.shape[1],image.shape[2])
@@ -116,7 +122,7 @@ def run_inference(data):
 
         sess = tf.Session()
 
-        model_parameters = init_vars()
+        model_parameters = init_vars(imageX,imageY)
         
         probability_distribution = inference(images_placeholder,model_parameters)
         log_loss = loss(probability_distribution,target_placeholder)
@@ -137,9 +143,7 @@ def run_inference(data):
 def prep_data(data_address,target_address):
     #assert(len(data,targets))
     image = np.expand_dims(np.array(IPF.getImage(data_address),dtype='float32'),axis=0)
-    target = np.expand_dims(np.array(IPF.getLabelImage(target_address),dtype='float32'),axis=0)
-    print(image.shape)
-    print(target.shape)
+    target = np.expand_dims(np.array(IPF.getLabelImage(target_address),dtype='bool'),axis=0)
     return image,target
     
 ######################################################################
@@ -151,8 +155,10 @@ data = prep_data(a,b)
 run_training(data)
 pd = run_inference(data)
 img = np.squeeze(pd)
-print(pd)
+print(img)
 print(img.shape)
 
+#trainplot = plt.imshow(np.squeeze(data[0]))
+#targetplot = plt.imshow(np.squeeze(data[1]))
 imgplot = plt.imshow(img)
 plt.show()

@@ -23,7 +23,7 @@ def getLabelImage(adress):
         column = []
         for x in y:
             #check to see if the current pixel is bright red
-            if (x[0] > 253) and (x[1] < 2) and (x[1] < 2):
+            if (x[0] > 0.9) and (x[1] < 0.2) and (x[2] < 0.2):
                 column.append(True)
             else:
                 column.append(False)
@@ -34,7 +34,7 @@ def getLabelImage(adress):
     
 def getImage(adress):
     image = mpimg.imread(adress)
-    return np.array(image,dtype ='float64')
+    return np.array(image,dtype ='bool')
     
 #take one image in array form and a corresponding array of labels and 
 #convert it into a form that can be passed to the sklearn classification algorithms
