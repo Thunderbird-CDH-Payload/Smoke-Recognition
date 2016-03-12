@@ -34,7 +34,7 @@ def getLabelImage(adress):
     
 def getImage(adress):
     image = mpimg.imread(adress)
-    return np.array(image,dtype ='bool')
+    return np.array(image,dtype ='float64')
     
 #take one image in array form and a corresponding array of labels and 
 #convert it into a form that can be passed to the sklearn classification algorithms

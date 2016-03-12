@@ -10,9 +10,9 @@ CH = 3
 BS = 1
 UNIT_STRIDE = [1,1,1,1]
 MAX_STEPS = 100
-KERNEL_SHAPES = [(5,5,CH,3),(5,5,3,3),(5,5,3,1)]
+KERNEL_SHAPES = [(5,5,CH,3),(5,5,3,3),(1,1,3,1)]
 LR_KEY = 'learning_rate'
-LR_VALUE = 0.000001
+LR_VALUE = 0.000000001
 
 def placeholder_inputs(imageX,imageY):
     image_placeholder = tf.placeholder(tf.float32,(BS,imageX,imageY,CH))
@@ -98,14 +98,18 @@ def run_training(data):
         log_loss = loss(probability_distribution,target_placeholder)
         train_op = train(log_loss,learning_params)
         
+
         saver = tf.train.Saver()
+        merged = tf.merge_all_summaries()
+        writer = tf.train.SummaryWriter("output.log", sess.graph_def)
 
         init = tf.initialize_all_variables()
         sess.run(init)
 
         for step in range(MAX_STEPS):
-            out = sess.run(train_op,feed_dict=feed_dict)
-            print(step)
+            out = sess.run(log_loss, feed_dict=feed_dict)
+            sess.run(train_op,feed_dict=feed_dict)
+            print(out)
 
         save_path = saver.save(sess, "model.ckpt")
         print("Model saved in file: %s" % save_path)
@@ -123,7 +127,7 @@ def run_inference(data):
         sess = tf.Session()
 
         model_parameters = init_vars(imageX,imageY)
-        
+
         probability_distribution = inference(images_placeholder,model_parameters)
         log_loss = loss(probability_distribution,target_placeholder)
 
@@ -145,7 +149,6 @@ def prep_data(data_address,target_address):
     image = np.expand_dims(np.array(IPF.getImage(data_address),dtype='float32'),axis=0)
     target = np.expand_dims(np.array(IPF.getLabelImage(target_address),dtype='bool'),axis=0)
     return image,target
-    
 ######################################################################
 ######################################################################
 ######################################################################
